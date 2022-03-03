@@ -62,12 +62,12 @@ class ParquetTopicPartitionRecordGrouper extends TopicPartitionRecordGrouper {
             if (Objects.isNull(record.valueSchema()) || Objects.isNull(record.keySchema())) {
                 throw new SchemaProjectorException("Record must have schemas for key and value");
             }
-            final var tp = new TopicPartition(record.topic(), record.kafkaPartition());
-            final var keyValueVersion =
+            final TopicPartition tp = new TopicPartition(record.topic(), record.kafkaPartition());
+            final KeyValueSchema keyValueVersion =
                     keyValueSchemas.computeIfAbsent(tp, ignored -> new KeyValueSchema(
                             record.keySchema(),
                             record.valueSchema()));
-            final var schemaChanged =
+            final boolean schemaChanged =
                     !keyValueVersion.keySchema.equals(record.keySchema())
                             || !keyValueVersion.valueSchema.equals(record.valueSchema());
             if (schemaChanged) {
@@ -97,7 +97,7 @@ class ParquetTopicPartitionRecordGrouper extends TopicPartitionRecordGrouper {
                 if (o == null || getClass() != o.getClass()) {
                     return false;
                 }
-                final var that = (KeyValueSchema) o;
+                final KeyValueSchema that = (KeyValueSchema) o;
                 return keySchema.equals(that.keySchema) && valueSchema.equals(that.valueSchema);
             }
 

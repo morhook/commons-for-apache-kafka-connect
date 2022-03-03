@@ -38,19 +38,15 @@ plugins {
 group = "io.aiven"
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 
     withJavadocJar()
     withSourcesJar()
 }
 
 compileJava {
-    options.compilerArgs = ["-Xlint:all", "-Werror"]
-}
-
-javadoc {
-    options.addBooleanOption('html5', true)
+    options.compilerArgs = ["-Xlint:all"]
 }
 
 wrapper {

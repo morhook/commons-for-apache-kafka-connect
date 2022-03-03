@@ -17,6 +17,7 @@
 package io.aiven.kafka.connect.common.output.parquet;
 
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
@@ -34,8 +35,8 @@ class ParquetConfig extends AbstractConfig {
     }
 
     public Configuration parquetConfiguration() {
-        final var config = new Configuration();
-        for (final var e : originalsWithPrefix("connect.").entrySet()) {
+        final Configuration config = new Configuration();
+        for (final Entry<String, Object> e : originalsWithPrefix("connect.").entrySet()) {
             if (!e.getKey().startsWith("parquet")) {
                 continue;
             }
@@ -50,7 +51,7 @@ class ParquetConfig extends AbstractConfig {
     }
 
     public CompressionCodecName compressionCodecName() {
-        final var connectorCompressionType =
+        final CompressionType connectorCompressionType =
                 CompressionType.forName(
                         originals().getOrDefault(
                                 AivenCommonConfig.FILE_COMPRESSION_TYPE_CONFIG,

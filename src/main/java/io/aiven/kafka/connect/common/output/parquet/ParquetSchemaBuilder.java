@@ -22,6 +22,7 @@ import java.util.Objects;
 
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.DataException;
+import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import io.aiven.kafka.connect.common.config.OutputField;
@@ -29,6 +30,7 @@ import io.aiven.kafka.connect.common.config.OutputField;
 import io.confluent.connect.avro.AvroData;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
+import org.apache.avro.SchemaBuilder.FieldAssembler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,7 +90,7 @@ class ParquetSchemaBuilder {
             return SchemaBuilder.builder().nullType();
         }
         org.apache.kafka.connect.data.Schema headerSchema = null;
-        for (final var h : record.headers()) {
+        for (final Header h : record.headers()) {
             if (Objects.isNull(h.schema())) {
                 throw new DataException("Header " + h + " without schema");
             }
@@ -104,13 +106,13 @@ class ParquetSchemaBuilder {
 
     protected Schema avroSchemaFor(final SinkRecord record) {
         if (envelopeEnabled) {
-            final var schemaFields =
+            final FieldAssembler<Schema> schemaFields =
                 SchemaBuilder
                     .builder("io.aiven.parquet.output.schema")
                     .record("connector_records")
                     .fields();
-            for (final var f : fields) {
-                final var schema = outputFieldSchema(f, record);
+            for (final OutputField f : fields) {
+                final Schema schema = outputFieldSchema(f, record);
                 schemaFields.name(f.getFieldType().name).type(schema).noDefault();
             }
             return schemaFields.endRecord();
@@ -126,7 +128,7 @@ class ParquetSchemaBuilder {
         if (schema.getType() == Schema.Type.MAP) {
             @SuppressWarnings("unchecked") final Map<String, Object> value =
                     (Map<String, Object>) record.value();
-            final var schemaFields =
+            final FieldAssembler<Schema> schemaFields =
                     SchemaBuilder
                             .builder("io.aiven.parquet.output.schema")
                             .record("connector_records")

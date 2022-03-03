@@ -41,7 +41,7 @@ import static io.aiven.kafka.connect.common.grouper.RecordGrouperFactory.SUPPORT
 
 public final class FilenameTemplateValidator implements ConfigDef.Validator {
 
-    static final Map<String, ParameterDescriptor> SUPPORTED_VARIABLE_PARAMETERS = new LinkedHashMap<>() {{
+    static final Map<String, ParameterDescriptor> SUPPORTED_VARIABLE_PARAMETERS = new LinkedHashMap() {{
             put(PARTITION.name, PARTITION.parameterDescriptor);
             put(START_OFFSET.name, START_OFFSET.parameterDescriptor);
             put(TIMESTAMP.name, TIMESTAMP.parameterDescriptor);

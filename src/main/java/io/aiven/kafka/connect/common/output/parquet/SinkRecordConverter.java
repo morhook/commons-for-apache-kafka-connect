@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import io.aiven.kafka.connect.common.config.OutputField;
@@ -64,9 +65,9 @@ class SinkRecordConverter {
 
     private GenericRecord createRecord(final Schema schema, final SinkRecord record) {
         if (envelopeEnabled) {
-            final var avroRecord = new GenericData.Record(schema);
-            for (final var f : fields) {
-                final var fieldValue = getRecordValueFor(f.getFieldType(), record);
+            final GenericData.Record avroRecord = new GenericData.Record(schema);
+            for (final OutputField f : fields) {
+                final Object fieldValue = getRecordValueFor(f.getFieldType(), record);
                 avroRecord.put(f.getFieldType().name, fieldValue);
             }
             return avroRecord;
@@ -78,12 +79,12 @@ class SinkRecordConverter {
     private GenericData.Record tryUnwrapEnvelope(final Schema schema, final SinkRecord record) {
         // envelope can be disabled only in case of single field
         final OutputField field = fields.iterator().next();
-        final var fieldValue = getRecordValueFor(field.getFieldType(), record);
+        final Object fieldValue = getRecordValueFor(field.getFieldType(), record);
         final Schema.Type originalValueSchemaType = avroData.fromConnectSchema(record.valueSchema()).getType();
         if (originalValueSchemaType == Schema.Type.MAP) {
             @SuppressWarnings("unchecked") final Set<Map.Entry<String, Object>> entries =
                 ((Map<String, Object>) fieldValue).entrySet();
-            final var avroRecord = new GenericData.Record(schema);
+            final GenericData.Record avroRecord = new GenericData.Record(schema);
             for (final Map.Entry<String, Object> entry : entries) {
                 avroRecord.put(entry.getKey(), entry.getValue());
             }
@@ -91,7 +92,7 @@ class SinkRecordConverter {
         } else if (originalValueSchemaType == Schema.Type.RECORD) {
             return (GenericData.Record) fieldValue;
         } else {
-            final var avroRecord = new GenericData.Record(schema);
+            final GenericData.Record avroRecord = new GenericData.Record(schema);
             avroRecord.put(field.getFieldType().name, fieldValue);
             return avroRecord;
         }
@@ -109,10 +110,10 @@ class SinkRecordConverter {
             case TIMESTAMP:
                 return record.timestamp();
             case HEADERS:
-                final var headers = new HashMap<String, Object>();
-                for (final var h : record.headers()) {
-                    final var k = h.key();
-                    final var v = fromConnectData(h.schema(), h.value());
+                final Map<String, Object> headers = new HashMap<String, Object>();
+                for (final Header h : record.headers()) {
+                    final String k = h.key();
+                    final Object v = fromConnectData(h.schema(), h.value());
                     headers.put(k, v);
                 }
                 return headers;
@@ -122,7 +123,7 @@ class SinkRecordConverter {
     }
 
     private Object fromConnectData(final org.apache.kafka.connect.data.Schema schema, final Object value) {
-        final var avroDataValue = avroData.fromConnectData(schema, value);
+        final Object avroDataValue = avroData.fromConnectData(schema, value);
         if (avroDataValue instanceof NonRecordContainer) {
             return ((NonRecordContainer) avroDataValue).getValue();
         } else {

@@ -18,8 +18,8 @@ package io.aiven.kafka.connect.common.output.parquet;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -30,8 +30,10 @@ import io.aiven.kafka.connect.common.output.OutputWriter;
 
 import io.confluent.connect.avro.AvroData;
 import io.confluent.connect.avro.AvroDataConfig;
+import org.apache.avro.Schema;
 import org.apache.parquet.avro.AvroParquetWriter;
 import org.apache.parquet.hadoop.ParquetFileWriter;
+import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.io.OutputFile;
 import org.apache.parquet.io.PositionOutputStream;
 import org.slf4j.Logger;
@@ -50,17 +52,17 @@ public class ParquetOutputWriter extends OutputWriter {
                                final Map<String, String> externalConfig,
                                final boolean envelopeEnabled) {
         super(new ParquetPositionOutputStream(out), new OutputStreamWriterStub(), externalConfig);
-        final var avroData = new AvroData(new AvroDataConfig(externalConfig));
+        final AvroData avroData = new AvroData(new AvroDataConfig(externalConfig));
         this.sinkRecordConverter = new SinkRecordConverter(fields, avroData, envelopeEnabled);
         this.parquetSchemaBuilder = new ParquetSchemaBuilder(fields, avroData, envelopeEnabled);
     }
 
     @Override
     public void writeRecords(final Collection<SinkRecord> sinkRecords) throws IOException {
-        final var parquetConfig = new ParquetConfig(externalConfiguration);
-        final var parquetSchema = parquetSchemaBuilder.buildSchema(sinkRecords.iterator().next());
+        final ParquetConfig parquetConfig = new ParquetConfig(externalConfiguration);
+        final Schema parquetSchema = parquetSchemaBuilder.buildSchema(sinkRecords.iterator().next());
         logger.debug("Record schema is: {}", parquetSchema);
-        try (final var parquetWriter =
+        try (final ParquetWriter<Object> parquetWriter =
                      AvroParquetWriter.builder(new ParquetOutputFile())
                              .withSchema(parquetSchema)
                              .withWriteMode(ParquetFileWriter.Mode.OVERWRITE)
@@ -68,7 +70,7 @@ public class ParquetOutputWriter extends OutputWriter {
                              .withConf(parquetConfig.parquetConfiguration())
                              .withCompressionCodec(parquetConfig.compressionCodecName())
                              .build()) {
-            for (final var record : sinkRecords) {
+            for (final SinkRecord record : sinkRecords) {
                 parquetWriter.write(sinkRecordConverter.convert(record, parquetSchema));
             }
         }
@@ -76,7 +78,7 @@ public class ParquetOutputWriter extends OutputWriter {
 
     @Override
     public void writeRecord(final SinkRecord record) throws IOException {
-        this.writeRecords(List.of(record));
+        this.writeRecords(Arrays.asList(record));
     }
 
     private static final class OutputStreamWriterStub implements OutputStreamWriter {

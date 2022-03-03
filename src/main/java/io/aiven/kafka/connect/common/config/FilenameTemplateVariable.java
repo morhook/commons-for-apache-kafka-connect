@@ -16,6 +16,7 @@
 
 package io.aiven.kafka.connect.common.config;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -28,7 +29,7 @@ public enum FilenameTemplateVariable {
         new ParameterDescriptor(
                 "padding",
                 false,
-                List.of(Boolean.TRUE.toString(), Boolean.FALSE.toString())
+                Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString())
         )
     ),
     START_OFFSET(
@@ -36,7 +37,7 @@ public enum FilenameTemplateVariable {
         new ParameterDescriptor(
             "padding",
             false,
-            List.of(Boolean.TRUE.toString(), Boolean.FALSE.toString())
+            Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString())
         )
     ),
     TIMESTAMP(
@@ -44,7 +45,7 @@ public enum FilenameTemplateVariable {
         new ParameterDescriptor(
             "unit",
             true,
-            List.of("yyyy", "MM", "dd", "HH")
+            Arrays.asList("yyyy", "MM", "dd", "HH")
         )
     );
 

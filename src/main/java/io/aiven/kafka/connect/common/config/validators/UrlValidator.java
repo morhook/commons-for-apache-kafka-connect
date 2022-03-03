@@ -28,9 +28,9 @@ public class UrlValidator implements ConfigDef.Validator {
     @Override
     public void ensureValid(final String name, final Object value) {
         if (Objects.nonNull(value)) {
-            var valueStr = (String) value;
+            String valueStr = (String) value;
 
-            if (valueStr.isBlank()) {
+            if (valueStr.matches("\\s*")) {
                 throw new ConfigException(name, value, "String must be non-empty");
             }
 

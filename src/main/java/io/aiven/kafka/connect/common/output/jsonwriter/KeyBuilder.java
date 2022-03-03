@@ -17,7 +17,7 @@
 package io.aiven.kafka.connect.common.output.jsonwriter;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.HashMap;
 import java.util.Objects;
 
 import org.apache.kafka.connect.errors.DataException;
@@ -36,7 +36,12 @@ class KeyBuilder implements OutputFieldBuilder {
     public KeyBuilder() {
         converter = new JsonConverter();
         // TODO: make a more generic configuration
-        converter.configure(Map.of("schemas.enable", false, "converter.type", "key"));
+        converter.configure(new HashMap<String, Object>() {{
+                put("schemas.enable", false);
+                put("converter.type", "key");
+            }}
+        );
+
     }
 
     /**
