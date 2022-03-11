@@ -72,7 +72,7 @@ public abstract class OutputWriter implements AutoCloseable {
         if (sinkRecords.isEmpty()) {
             return;
         }
-        for (final var r : sinkRecords) {
+        for (final SinkRecord r : sinkRecords) {
             writeRecord(r);
         }
     }

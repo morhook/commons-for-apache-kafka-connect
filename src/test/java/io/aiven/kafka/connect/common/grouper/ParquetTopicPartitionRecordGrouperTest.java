@@ -149,7 +149,7 @@ final class ParquetTopicPartitionRecordGrouperTest {
         grouper.put(KRT1P1R2);
         grouper.put(KRT1P1R3);
 
-        final var records = grouper.records();
+        final Map<String, List<SinkRecord>> records = grouper.records();
         assertThat(records)
             .containsOnly(
                 entry("topic1-0-1000", list(KRT1P1R0, KRT1P1R1)),

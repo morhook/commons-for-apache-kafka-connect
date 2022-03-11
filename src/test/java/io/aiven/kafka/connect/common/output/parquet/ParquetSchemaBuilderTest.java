@@ -17,6 +17,8 @@
 package io.aiven.kafka.connect.common.output.parquet;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -51,18 +53,19 @@ class ParquetSchemaBuilderTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void testSchemaForSimpleType(final boolean envelopeEnabled) {
-        final var fields =
-                List.of(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
+        final List<OutputField> fields =
+                Arrays.asList(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
 
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, new AvroData(AVRO_CACHE_SIZE), envelopeEnabled);
+        final ParquetSchemaBuilder schemaBuilder = 
+            new ParquetSchemaBuilder(fields, new AvroData(AVRO_CACHE_SIZE), envelopeEnabled);
 
-        final var sinkRecord =
+        final SinkRecord sinkRecord =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, "some-key",
                         Schema.STRING_SCHEMA, "some-value",
                         100L, 1000L, TimestampType.CREATE_TIME);
-        final var avroSchema = schemaBuilder.buildSchema(sinkRecord);
+        final org.apache.avro.Schema avroSchema = schemaBuilder.buildSchema(sinkRecord);
 
         assertThat(avroSchema).isNotNull();
         assertThat(avroSchema.getType()).isEqualTo(Type.RECORD);
@@ -71,17 +74,17 @@ class ParquetSchemaBuilderTest {
 
     @Test
     void testSchemaForRecordValueStruct() {
-        final var fields =
-                List.of(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
+        final List<OutputField> fields =
+                Arrays.asList(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
 
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, new AvroData(AVRO_CACHE_SIZE));
+        final ParquetSchemaBuilder schemaBuilder = new ParquetSchemaBuilder(fields, new AvroData(AVRO_CACHE_SIZE));
 
-        final var recordSchema = SchemaBuilder.struct()
+        final Schema recordSchema = SchemaBuilder.struct()
                 .field("user_name", Schema.STRING_SCHEMA)
                 .field("user_ip", Schema.STRING_SCHEMA)
                 .field("blocked", Schema.BOOLEAN_SCHEMA)
                 .build();
-        final var sinkRecord =
+        final SinkRecord sinkRecord =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, "some-key",
@@ -91,7 +94,7 @@ class ParquetSchemaBuilderTest {
                                 .put("user_ip", "127.0.0.1")
                                 .put("blocked", false),
                         100L, 1000L, TimestampType.CREATE_TIME);
-        final var avroSchema = schemaBuilder.buildSchema(sinkRecord);
+        final org.apache.avro.Schema avroSchema = schemaBuilder.buildSchema(sinkRecord);
 
         assertThat(avroSchema).isNotNull();
         assertThat(avroSchema.getType()).isEqualTo(Type.RECORD);
@@ -101,18 +104,18 @@ class ParquetSchemaBuilderTest {
 
     @Test
     void testSchemaForRecordValueStructWithoutEnvelope() {
-        final var fields =
-                List.of(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
+        final List<OutputField> fields =
+                Arrays.asList(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
 
         final AvroData avroData = new AvroData(AVRO_CACHE_SIZE);
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, avroData, false);
+        final ParquetSchemaBuilder schemaBuilder = new ParquetSchemaBuilder(fields, avroData, false);
 
-        final var recordSchema = SchemaBuilder.struct()
+        final Schema recordSchema = SchemaBuilder.struct()
                 .field("user_name", Schema.STRING_SCHEMA)
                 .field("user_ip", Schema.STRING_SCHEMA)
                 .field("blocked", Schema.BOOLEAN_SCHEMA)
                 .build();
-        final var sinkRecord =
+        final SinkRecord sinkRecord =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, "some-key",
@@ -122,7 +125,7 @@ class ParquetSchemaBuilderTest {
                                 .put("user_ip", "127.0.0.1")
                                 .put("blocked", false),
                         100L, 1000L, TimestampType.CREATE_TIME);
-        final var avroSchema = schemaBuilder.buildSchema(sinkRecord);
+        final org.apache.avro.Schema avroSchema = schemaBuilder.buildSchema(sinkRecord);
 
         assertThat(avroSchema).isNotNull();
         assertThat(avroSchema.getType()).isEqualTo(Type.RECORD);
@@ -131,20 +134,24 @@ class ParquetSchemaBuilderTest {
 
     @Test
     void testSchemaForRecordValueMap() {
-        final var fields =
-                List.of(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
+        final List<OutputField> fields =
+                Arrays.asList(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
 
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, new AvroData(AVRO_CACHE_SIZE));
+        final ParquetSchemaBuilder schemaBuilder = new ParquetSchemaBuilder(fields, new AvroData(AVRO_CACHE_SIZE));
 
-        final var recordSchema =
+        final Schema recordSchema =
                 SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.BOOLEAN_SCHEMA).build();
-        final var sinkRecord =
+        final SinkRecord sinkRecord =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, "some-key",
-                        recordSchema, Map.of("any", true, "beny", false, "raba", true),
+                        recordSchema, new HashMap<String, Boolean>() {{
+                                put("any", true);
+                                put("beny", false);
+                                put("raba", true);
+                            }},
                         100L, 1000L, TimestampType.CREATE_TIME);
-        final var avroSchema = schemaBuilder.buildSchema(sinkRecord);
+        final org.apache.avro.Schema avroSchema = schemaBuilder.buildSchema(sinkRecord);
 
         assertThat(avroSchema).isNotNull();
         assertThat(avroSchema.getType()).isEqualTo(Type.RECORD);
@@ -156,21 +163,26 @@ class ParquetSchemaBuilderTest {
 
     @Test
     void testSchemaForRecordValueMapWithoutEnvelope() {
-        final var fields =
-                List.of(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
+        final List<OutputField> fields =
+                Arrays.asList(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
 
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, new AvroData(AVRO_CACHE_SIZE), false);
+        final ParquetSchemaBuilder schemaBuilder = 
+            new ParquetSchemaBuilder(fields, new AvroData(AVRO_CACHE_SIZE), false);
 
-        final var recordSchema =
+        final Schema recordSchema =
                 SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.BOOLEAN_SCHEMA).build();
-        final Map<String, Boolean> valueMap = Map.of("any", true, "beny", false, "raba", true);
-        final var sinkRecord =
+        final Map<String, Boolean> valueMap = new HashMap<String, Boolean>() {{
+                put("any", true);
+                put("beny", false);
+                put("raba", true);
+            }};
+        final SinkRecord sinkRecord =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, valueMap,
                         recordSchema, valueMap,
                         100L, 1000L, TimestampType.CREATE_TIME);
-        final var avroSchema = schemaBuilder.buildSchema(sinkRecord);
+        final org.apache.avro.Schema avroSchema = schemaBuilder.buildSchema(sinkRecord);
 
         assertThat(avroSchema).isNotNull();
         assertThat(avroSchema.getType()).isEqualTo(Type.RECORD);
@@ -186,25 +198,26 @@ class ParquetSchemaBuilderTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void testSchemaForRecordValueArray(final boolean envelopeEnabled) {
-        final var fields =
-                List.of(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
+        final List<OutputField> fields =
+                Arrays.asList(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
 
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, new AvroData(AVRO_CACHE_SIZE), envelopeEnabled);
+        final ParquetSchemaBuilder schemaBuilder = 
+            new ParquetSchemaBuilder(fields, new AvroData(AVRO_CACHE_SIZE), envelopeEnabled);
 
-        final var recordSchema =
+        final Schema recordSchema =
                 SchemaBuilder.array(Schema.STRING_SCHEMA).build();
-        final var sinkRecord =
+        final SinkRecord sinkRecord =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, "some-key",
-                        recordSchema, List.of("any", "beny", "raba"),
+                        recordSchema, Arrays.asList("any", "beny", "raba"),
                         100L, 1000L, TimestampType.CREATE_TIME);
-        final var avroSchema = schemaBuilder.buildSchema(sinkRecord);
+        final org.apache.avro.Schema avroSchema = schemaBuilder.buildSchema(sinkRecord);
 
         assertThat(avroSchema).isNotNull();
         assertThat(avroSchema.getType()).isEqualTo(Type.RECORD);
         assertThat(avroSchema.getFields()).hasSize(1);
-        final var valueSchema = avroSchema.getField(OutputFieldType.VALUE.name).schema();
+        final org.apache.avro.Schema valueSchema = avroSchema.getField(OutputFieldType.VALUE.name).schema();
         assertThat(valueSchema.getType()).isEqualTo(Type.ARRAY);
         assertThat(valueSchema.getElementType().getType()).isEqualTo(Type.STRING);
     }
@@ -212,18 +225,19 @@ class ParquetSchemaBuilderTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void testSchemaForRecordValueSimpleType(final boolean envelopeEnabled) {
-        final var fields =
-                List.of(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
+        final List<OutputField> fields =
+                Arrays.asList(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
 
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, new AvroData(AVRO_CACHE_SIZE), envelopeEnabled);
+        final ParquetSchemaBuilder schemaBuilder = 
+            new ParquetSchemaBuilder(fields, new AvroData(AVRO_CACHE_SIZE), envelopeEnabled);
 
-        final var sinkRecord =
+        final SinkRecord sinkRecord =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, "some-key",
                         Schema.STRING_SCHEMA, "some-value",
                         100L, 1000L, TimestampType.CREATE_TIME);
-        final var avroSchema = schemaBuilder.buildSchema(sinkRecord);
+        final org.apache.avro.Schema avroSchema = schemaBuilder.buildSchema(sinkRecord);
 
         assertThat(avroSchema).isNotNull();
         assertThat(avroSchema.getType()).isEqualTo(Type.RECORD);
@@ -233,18 +247,18 @@ class ParquetSchemaBuilderTest {
 
     @Test
     void testBuildAivenCustomSchemaForMultipleFields() {
-        final var fields = List.of(
+        final List<OutputField> fields = Arrays.asList(
                 new OutputField(OutputFieldType.KEY, OutputFieldEncodingType.NONE),
                 new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE),
                 new OutputField(OutputFieldType.TIMESTAMP, OutputFieldEncodingType.NONE),
                 new OutputField(OutputFieldType.OFFSET, OutputFieldEncodingType.NONE),
                 new OutputField(OutputFieldType.HEADERS, OutputFieldEncodingType.NONE)
         );
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, new AvroData(AVRO_CACHE_SIZE));
+        final ParquetSchemaBuilder schemaBuilder = new ParquetSchemaBuilder(fields, new AvroData(AVRO_CACHE_SIZE));
         final Headers headers = new ConnectHeaders();
         headers.add("a", "b", Schema.STRING_SCHEMA);
         headers.add("c", "d", Schema.STRING_SCHEMA);
-        final var sinkRecord =
+        final SinkRecord sinkRecord =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, "some-key",
@@ -252,7 +266,7 @@ class ParquetSchemaBuilderTest {
                         100L, 1000L,
                         TimestampType.CREATE_TIME, headers);
 
-        final var avroSchema = schemaBuilder.buildSchema(sinkRecord);
+        final org.apache.avro.Schema avroSchema = schemaBuilder.buildSchema(sinkRecord);
 
         assertThat(avroSchema).isNotNull();
         assertThat(avroSchema.getType()).isEqualTo(Type.RECORD);
@@ -273,15 +287,15 @@ class ParquetSchemaBuilderTest {
 
     @Test
     void testBuildSchemaForMultipleFieldsWithoutHeaders() {
-        final var fields = List.of(
+        final List<OutputField> fields = Arrays.asList(
                 new OutputField(OutputFieldType.KEY, OutputFieldEncodingType.NONE),
                 new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE),
                 new OutputField(OutputFieldType.TIMESTAMP, OutputFieldEncodingType.NONE),
                 new OutputField(OutputFieldType.OFFSET, OutputFieldEncodingType.NONE),
                 new OutputField(OutputFieldType.HEADERS, OutputFieldEncodingType.NONE)
         );
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, new AvroData(AVRO_CACHE_SIZE));
-        final var sinkRecord =
+        final ParquetSchemaBuilder schemaBuilder = new ParquetSchemaBuilder(fields, new AvroData(AVRO_CACHE_SIZE));
+        final SinkRecord sinkRecord =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, "some-key",
@@ -289,7 +303,7 @@ class ParquetSchemaBuilderTest {
                         100L, 1000L,
                         TimestampType.CREATE_TIME);
 
-        final var avroSchema = schemaBuilder.buildSchema(sinkRecord);
+        final org.apache.avro.Schema avroSchema = schemaBuilder.buildSchema(sinkRecord);
 
         assertThat(avroSchema).isNotNull();
         assertThat(avroSchema.getType()).isEqualTo(Type.RECORD);
@@ -306,10 +320,10 @@ class ParquetSchemaBuilderTest {
 
     @Test
     void testThrowsDataExceptionForWrongNoSchemaData() {
-        final var fields =
-                List.of(new OutputField(OutputFieldType.KEY, OutputFieldEncodingType.NONE));
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, new AvroData(10));
-        final var sinkRecordWithoutKeySchema =
+        final List<OutputField> fields =
+                Arrays.asList(new OutputField(OutputFieldType.KEY, OutputFieldEncodingType.NONE));
+        final ParquetSchemaBuilder schemaBuilder = new ParquetSchemaBuilder(fields, new AvroData(10));
+        final SinkRecord sinkRecordWithoutKeySchema =
                 new SinkRecord(
                         "some-topic", 1,
                         null, "some-key",
@@ -321,7 +335,7 @@ class ParquetSchemaBuilderTest {
             .isInstanceOf(DataException.class)
             .hasMessage("Record key without schema");
 
-        final var sinkRecordWithoutRecordSchema =
+        final SinkRecord sinkRecordWithoutRecordSchema =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, "some-key",
@@ -336,12 +350,12 @@ class ParquetSchemaBuilderTest {
 
     @Test
     void testThrowsDataExceptionForWrongHeaders() {
-        final var fields =
-                List.of(new OutputField(OutputFieldType.HEADERS, OutputFieldEncodingType.NONE));
+        final List<OutputField> fields =
+                Arrays.asList(new OutputField(OutputFieldType.HEADERS, OutputFieldEncodingType.NONE));
 
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, new AvroData(10));
+        final ParquetSchemaBuilder schemaBuilder = new ParquetSchemaBuilder(fields, new AvroData(10));
 
-        final var sinkRecordWithHeadersWithoutSchema =
+        final SinkRecord sinkRecordWithHeadersWithoutSchema =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, "some-key",
@@ -356,7 +370,7 @@ class ParquetSchemaBuilderTest {
         assertThatThrownBy(() -> schemaBuilder.buildSchema(sinkRecordWithHeadersWithoutSchema))
             .isInstanceOf(DataException.class);
 
-        final var sinkRecordWithHeadersWithDiffSchema =
+        final SinkRecord sinkRecordWithHeadersWithDiffSchema =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, "some-key",

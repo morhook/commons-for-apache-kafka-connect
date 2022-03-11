@@ -16,9 +16,9 @@
 
 package io.aiven.kafka.connect.common.output.parquet;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.connect.data.Schema;
@@ -54,20 +54,20 @@ class SinkRecordConverterTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void testConvertRecordWithOneFieldSimpleType(final boolean envelopeEnabled) {
-        final var fields =
-                List.of(new OutputField(OutputFieldType.OFFSET, OutputFieldEncodingType.NONE));
+        final List<OutputField> fields =
+                Arrays.asList(new OutputField(OutputFieldType.OFFSET, OutputFieldEncodingType.NONE));
 
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, avroData, envelopeEnabled);
-        final var converter = new SinkRecordConverter(fields, avroData, envelopeEnabled);
+        final ParquetSchemaBuilder schemaBuilder = new ParquetSchemaBuilder(fields, avroData, envelopeEnabled);
+        final SinkRecordConverter converter = new SinkRecordConverter(fields, avroData, envelopeEnabled);
 
-        final var sinkRecord =
+        final SinkRecord sinkRecord =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, "some-key",
                         Schema.STRING_SCHEMA, "some-value",
                         100L, 1000L, TimestampType.CREATE_TIME);
 
-        final var avroRecord = converter.convert(sinkRecord, schemaBuilder.buildSchema(sinkRecord));
+        final GenericRecord avroRecord = converter.convert(sinkRecord, schemaBuilder.buildSchema(sinkRecord));
         assertThat(avroRecord.get(OutputFieldType.OFFSET.name)).isNotNull();
         assertThat(avroRecord.get(OutputFieldType.KEY.name)).isNull();
         assertThat(avroRecord.get(OutputFieldType.TIMESTAMP.name)).isNull();
@@ -80,20 +80,20 @@ class SinkRecordConverterTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void testConvertRecordValueSimpleType(final boolean envelopeEnabled) {
-        final var fields =
-                List.of(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
+        final List<OutputField> fields =
+                Arrays.asList(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
 
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, avroData, envelopeEnabled);
-        final var converter = new SinkRecordConverter(fields, avroData, envelopeEnabled);
+        final ParquetSchemaBuilder schemaBuilder = new ParquetSchemaBuilder(fields, avroData, envelopeEnabled);
+        final SinkRecordConverter converter = new SinkRecordConverter(fields, avroData, envelopeEnabled);
 
-        final var sinkRecord =
+        final SinkRecord sinkRecord =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, "some-key",
                         Schema.STRING_SCHEMA, "some-value",
                         100L, 1000L, TimestampType.CREATE_TIME);
 
-        final var avroRecord = converter.convert(sinkRecord, schemaBuilder.buildSchema(sinkRecord));
+        final GenericRecord avroRecord = converter.convert(sinkRecord, schemaBuilder.buildSchema(sinkRecord));
         assertThat(avroRecord.get(OutputFieldType.OFFSET.name)).isNull();
         assertThat(avroRecord.get(OutputFieldType.KEY.name)).isNull();
         assertThat(avroRecord.get(OutputFieldType.TIMESTAMP.name)).isNull();
@@ -103,19 +103,19 @@ class SinkRecordConverterTest {
 
     @Test
     void testConvertRecordValueStructType() {
-        final var fields =
-                List.of(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
+        final List<OutputField> fields =
+                Arrays.asList(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
 
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, avroData);
-        final var converter = new SinkRecordConverter(fields, avroData);
+        final ParquetSchemaBuilder schemaBuilder = new ParquetSchemaBuilder(fields, avroData);
+        final SinkRecordConverter converter = new SinkRecordConverter(fields, avroData);
 
-        final var recordSchema =
+        final Schema recordSchema =
                 SchemaBuilder.struct()
                         .field("foo", Schema.STRING_SCHEMA)
                         .field("bar", SchemaBuilder.STRING_SCHEMA)
                         .build();
 
-        final var sinkRecord =
+        final SinkRecord sinkRecord =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, "some-key",
@@ -125,33 +125,33 @@ class SinkRecordConverterTest {
                                 .put("bar", "foo"),
                         100L, 1000L, TimestampType.CREATE_TIME);
 
-        final var avroRecord = converter.convert(sinkRecord, schemaBuilder.buildSchema(sinkRecord));
+        final GenericRecord avroRecord = converter.convert(sinkRecord, schemaBuilder.buildSchema(sinkRecord));
         assertThat(avroRecord.get(OutputFieldType.OFFSET.name)).isNull();
         assertThat(avroRecord.get(OutputFieldType.KEY.name)).isNull();
         assertThat(avroRecord.get(OutputFieldType.TIMESTAMP.name)).isNull();
         assertThat(avroRecord.get(OutputFieldType.HEADERS.name)).isNull();
         assertThat(avroRecord.get(OutputFieldType.VALUE.name)).isNotNull();
 
-        final var valueRecord = (GenericRecord) avroRecord.get("value");
+        final GenericRecord valueRecord = (GenericRecord) avroRecord.get("value");
         assertThat(valueRecord.get("foo")).hasToString("bar");
         assertThat(valueRecord.get("bar")).hasToString("foo");
     }
 
     @Test
     void testConvertRecordValueStruct() {
-        final var fields =
-                List.of(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
+        final List<OutputField> fields =
+                Arrays.asList(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
 
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, avroData);
-        final var converter = new SinkRecordConverter(fields, avroData);
+        final ParquetSchemaBuilder schemaBuilder = new ParquetSchemaBuilder(fields, avroData);
+        final SinkRecordConverter converter = new SinkRecordConverter(fields, avroData);
 
-        final var recordSchema = SchemaBuilder.struct()
+        final Schema recordSchema = SchemaBuilder.struct()
                 .field("user_name", Schema.STRING_SCHEMA)
                 .field("user_ip", Schema.STRING_SCHEMA)
                 .field("blocked", Schema.BOOLEAN_SCHEMA)
                 .build();
 
-        final var sinkRecord =
+        final SinkRecord sinkRecord =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, "some-key",
@@ -161,7 +161,7 @@ class SinkRecordConverterTest {
                             .put("blocked", true),
                         100L, 1000L, TimestampType.CREATE_TIME);
 
-        final var avroRecord = converter.convert(sinkRecord, schemaBuilder.buildSchema(sinkRecord));
+        final GenericRecord avroRecord = converter.convert(sinkRecord, schemaBuilder.buildSchema(sinkRecord));
         assertThat(avroRecord.get(OutputFieldType.OFFSET.name)).isNull();
         assertThat(avroRecord.get(OutputFieldType.KEY.name)).isNull();
         assertThat(avroRecord.get(OutputFieldType.TIMESTAMP.name)).isNull();
@@ -172,7 +172,7 @@ class SinkRecordConverterTest {
             .map(Field::name)
             .containsExactly("user_name", "user_ip", "blocked");
 
-        final var valueRecord = (GenericRecord) avroRecord.get("value");
+        final GenericRecord valueRecord = (GenericRecord) avroRecord.get("value");
         assertThat(valueRecord.get("user_name")).isEqualTo("John Doe");
         assertThat(valueRecord.get("user_ip")).isEqualTo("127.0.0.1");
         assertThat(valueRecord.get("blocked")).isEqualTo(true);
@@ -180,19 +180,19 @@ class SinkRecordConverterTest {
 
     @Test
     void testConvertRecordValueStructWithoutEnvelope() {
-        final var fields =
-                List.of(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
+        final List<OutputField> fields =
+                Arrays.asList(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
 
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, avroData, false);
-        final var converter = new SinkRecordConverter(fields, avroData, false);
+        final ParquetSchemaBuilder schemaBuilder = new ParquetSchemaBuilder(fields, avroData, false);
+        final SinkRecordConverter converter = new SinkRecordConverter(fields, avroData, false);
 
-        final var recordSchema = SchemaBuilder.struct()
+        final Schema recordSchema = SchemaBuilder.struct()
                 .field("user_name", Schema.STRING_SCHEMA)
                 .field("user_ip", Schema.STRING_SCHEMA)
                 .field("blocked", Schema.BOOLEAN_SCHEMA)
                 .build();
 
-        final var sinkRecord =
+        final SinkRecord sinkRecord =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, "some-key",
@@ -202,7 +202,7 @@ class SinkRecordConverterTest {
                         .put("blocked", true),
                         100L, 1000L, TimestampType.CREATE_TIME);
 
-        final var avroRecord = converter.convert(sinkRecord, schemaBuilder.buildSchema(sinkRecord));
+        final GenericRecord avroRecord = converter.convert(sinkRecord, schemaBuilder.buildSchema(sinkRecord));
         assertThat(avroRecord.get(OutputFieldType.OFFSET.name)).isNull();
         assertThat(avroRecord.get(OutputFieldType.KEY.name)).isNull();
         assertThat(avroRecord.get(OutputFieldType.TIMESTAMP.name)).isNull();
@@ -219,61 +219,69 @@ class SinkRecordConverterTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void testConvertRecordValueArray(final boolean envelopeEnabled) {
-        final var fields =
-                List.of(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
+        final List<OutputField> fields =
+                Arrays.asList(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
 
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, avroData, envelopeEnabled);
-        final var converter = new SinkRecordConverter(fields, avroData, envelopeEnabled);
+        final ParquetSchemaBuilder schemaBuilder = new ParquetSchemaBuilder(fields, avroData, envelopeEnabled);
+        final SinkRecordConverter converter = new SinkRecordConverter(fields, avroData, envelopeEnabled);
 
-        final var recordSchema = SchemaBuilder.array(Schema.INT32_SCHEMA).build();
+        final Schema recordSchema = SchemaBuilder.array(Schema.INT32_SCHEMA).build();
 
-        final var sinkRecord =
+        final SinkRecord sinkRecord =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, "some-key",
-                        recordSchema, List.of(1, 2, 3, 4, 5, 6),
+                        recordSchema, Arrays.asList(1, 2, 3, 4, 5, 6),
                         100L, 1000L, TimestampType.CREATE_TIME);
 
-        final var avroRecord = converter.convert(sinkRecord, schemaBuilder.buildSchema(sinkRecord));
+        final GenericRecord avroRecord = converter.convert(sinkRecord, schemaBuilder.buildSchema(sinkRecord));
         assertThat(avroRecord).hasToString("{\"value\": [1, 2, 3, 4, 5, 6]}");
     }
 
     @Test
     void testConvertRecordValueMap() {
-        final var fields =
-                List.of(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
+        final List<OutputField> fields =
+                Arrays.asList(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
 
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, avroData);
-        final var converter = new SinkRecordConverter(fields, avroData);
+        final ParquetSchemaBuilder schemaBuilder = new ParquetSchemaBuilder(fields, avroData);
+        final SinkRecordConverter converter = new SinkRecordConverter(fields, avroData);
 
-        final var recordSchema = SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.BOOLEAN_SCHEMA).build();
+        final Schema recordSchema = SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.BOOLEAN_SCHEMA).build();
 
-        final var sinkRecord =
+        final SinkRecord sinkRecord =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, "some-key",
-                        recordSchema, Map.of("a", true, "b", false, "c", true),
+                        recordSchema, new HashMap<String, Boolean>() {{
+                                put("a", true);
+                                put("b", false);
+                                put("c", true);
+                            }},
                         100L, 1000L, TimestampType.CREATE_TIME);
 
-        final var avroRecord = converter.convert(sinkRecord, schemaBuilder.buildSchema(sinkRecord));
+        final GenericRecord avroRecord = converter.convert(sinkRecord, schemaBuilder.buildSchema(sinkRecord));
         assertThat(avroRecord).hasToString("{\"value\": {\"a\": true, \"b\": false, \"c\": true}}");
     }
 
     @Test
     void testConvertRecordValueMapWithoutEnvelope() {
-        final var fields =
-            List.of(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
+        final List<OutputField> fields =
+            Arrays.asList(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE));
 
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, avroData, false);
-        final var converter = new SinkRecordConverter(fields, avroData, false);
+        final ParquetSchemaBuilder schemaBuilder = new ParquetSchemaBuilder(fields, avroData, false);
+        final SinkRecordConverter converter = new SinkRecordConverter(fields, avroData, false);
 
-        final var recordSchema = SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.BOOLEAN_SCHEMA).build();
+        final Schema recordSchema = SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.BOOLEAN_SCHEMA).build();
 
-        final var sinkRecord =
+        final SinkRecord sinkRecord =
             new SinkRecord(
                 "some-topic", 1,
                 Schema.STRING_SCHEMA, "some-key",
-                recordSchema, new HashMap<>(Map.of("a", true, "b", false, "c", true)),
+                recordSchema, new HashMap<String, Boolean>() {{
+                        put("a", true);
+                        put("b", false);
+                        put("c", true);
+                    }},
                 100L, 1000L, TimestampType.CREATE_TIME);
 
         final org.apache.avro.Schema schema = schemaBuilder.buildSchema(sinkRecord);
@@ -283,7 +291,7 @@ class SinkRecordConverterTest {
 
     @Test
     void testConvertRecordWithAllFields() {
-        final var fields = List.of(
+        final List<OutputField> fields = Arrays.asList(
                 new OutputField(OutputFieldType.KEY, OutputFieldEncodingType.NONE),
                 new OutputField(OutputFieldType.OFFSET, OutputFieldEncodingType.NONE),
                 new OutputField(OutputFieldType.TIMESTAMP, OutputFieldEncodingType.NONE),
@@ -291,20 +299,20 @@ class SinkRecordConverterTest {
                 new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE)
         );
 
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, avroData);
-        final var converter = new SinkRecordConverter(fields, avroData);
+        final ParquetSchemaBuilder schemaBuilder = new ParquetSchemaBuilder(fields, avroData);
+        final SinkRecordConverter converter = new SinkRecordConverter(fields, avroData);
 
         final Headers headers = new ConnectHeaders();
         headers.add("a", "b", Schema.STRING_SCHEMA);
         headers.add("c", "d", Schema.STRING_SCHEMA);
 
-        final var recordSchema = SchemaBuilder.struct()
+        final Schema recordSchema = SchemaBuilder.struct()
                 .field("user_name", Schema.STRING_SCHEMA)
                 .field("user_ip", Schema.STRING_SCHEMA)
                 .field("blocked", Schema.BOOLEAN_SCHEMA)
                 .build();
 
-        final var sinkRecord =
+        final SinkRecord sinkRecord =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, "some-key",
@@ -315,7 +323,7 @@ class SinkRecordConverterTest {
                                 .put("blocked", true),
                         100L, 1000L, TimestampType.CREATE_TIME, headers);
 
-        final var avroRecord = converter.convert(sinkRecord, schemaBuilder.buildSchema(sinkRecord));
+        final GenericRecord avroRecord = converter.convert(sinkRecord, schemaBuilder.buildSchema(sinkRecord));
         assertThat(avroRecord.get(OutputFieldType.KEY.name)).isNotNull();
         assertThat(avroRecord.get(OutputFieldType.OFFSET.name)).isNotNull();
         assertThat(avroRecord.get(OutputFieldType.TIMESTAMP.name)).isNotNull();
@@ -339,7 +347,7 @@ class SinkRecordConverterTest {
 
     @Test
     void testConvertRecordWithAllFieldsWithoutHeaders() {
-        final var fields = List.of(
+        final List<OutputField> fields = Arrays.asList(
                 new OutputField(OutputFieldType.KEY, OutputFieldEncodingType.NONE),
                 new OutputField(OutputFieldType.OFFSET, OutputFieldEncodingType.NONE),
                 new OutputField(OutputFieldType.TIMESTAMP, OutputFieldEncodingType.NONE),
@@ -347,16 +355,16 @@ class SinkRecordConverterTest {
                 new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE)
         );
 
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, avroData);
-        final var converter = new SinkRecordConverter(fields, avroData);
+        final ParquetSchemaBuilder schemaBuilder = new ParquetSchemaBuilder(fields, avroData);
+        final SinkRecordConverter converter = new SinkRecordConverter(fields, avroData);
 
-        final var recordSchema = SchemaBuilder.struct()
+        final Schema recordSchema = SchemaBuilder.struct()
                 .field("user_name", Schema.STRING_SCHEMA)
                 .field("user_ip", Schema.STRING_SCHEMA)
                 .field("blocked", Schema.BOOLEAN_SCHEMA)
                 .build();
 
-        final var sinkRecord =
+        final SinkRecord sinkRecord =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, "some-key",
@@ -367,7 +375,7 @@ class SinkRecordConverterTest {
                                 .put("blocked", true),
                         100L, 1000L, TimestampType.CREATE_TIME);
 
-        final var avroRecord = converter.convert(sinkRecord, schemaBuilder.buildSchema(sinkRecord));
+        final GenericRecord avroRecord = converter.convert(sinkRecord, schemaBuilder.buildSchema(sinkRecord));
         assertThat(avroRecord.get(OutputFieldType.KEY.name)).isNotNull();
         assertThat(avroRecord.get(OutputFieldType.OFFSET.name)).isNotNull();
         assertThat(avroRecord.get(OutputFieldType.TIMESTAMP.name)).isNotNull();
@@ -388,23 +396,23 @@ class SinkRecordConverterTest {
 
     @Test
     void testConvertRecordWithPartialFields() {
-        final var fields = List.of(
+        final List<OutputField> fields = Arrays.asList(
                 new OutputField(OutputFieldType.KEY, OutputFieldEncodingType.NONE),
                 new OutputField(OutputFieldType.OFFSET, OutputFieldEncodingType.NONE),
                 new OutputField(OutputFieldType.TIMESTAMP, OutputFieldEncodingType.NONE)
         );
 
-        final var schemaBuilder = new ParquetSchemaBuilder(fields, avroData);
-        final var converter = new SinkRecordConverter(fields, avroData);
+        final ParquetSchemaBuilder schemaBuilder = new ParquetSchemaBuilder(fields, avroData);
+        final SinkRecordConverter converter = new SinkRecordConverter(fields, avroData);
 
-        final var sinkRecord =
+        final SinkRecord sinkRecord =
                 new SinkRecord(
                         "some-topic", 1,
                         Schema.STRING_SCHEMA, "some-key",
                         Schema.STRING_SCHEMA, "some-value",
                         100L, 1000L, TimestampType.CREATE_TIME);
 
-        final var avroRecord = converter.convert(sinkRecord, schemaBuilder.buildSchema(sinkRecord));
+        final GenericRecord avroRecord = converter.convert(sinkRecord, schemaBuilder.buildSchema(sinkRecord));
         assertThat(avroRecord.get(OutputFieldType.KEY.name)).isNotNull();
         assertThat(avroRecord.get(OutputFieldType.OFFSET.name)).isNotNull();
         assertThat(avroRecord.get(OutputFieldType.TIMESTAMP.name)).isNotNull();

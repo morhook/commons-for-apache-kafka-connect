@@ -16,6 +16,7 @@
 
 package io.aiven.kafka.connect.common.grouper;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,14 +38,15 @@ public final class RecordGrouperFactory {
 
     public static final String TOPIC_PARTITION_RECORD = TopicPartitionRecordGrouper.class.getName();
 
-    public static final Map<String, List<Pair<String, Boolean>>> SUPPORTED_VARIABLES = new LinkedHashMap<>() {{
-            put(TOPIC_PARTITION_RECORD, List.of(
+    public static final Map<String, List<Pair<String, Boolean>>> SUPPORTED_VARIABLES = new LinkedHashMap() {{
+            put(TOPIC_PARTITION_RECORD, Arrays.asList(
                 Pair.of(FilenameTemplateVariable.TOPIC.name, true),
                 Pair.of(FilenameTemplateVariable.PARTITION.name, true),
                 Pair.of(FilenameTemplateVariable.START_OFFSET.name, true),
-                Pair.of(FilenameTemplateVariable.TIMESTAMP.name, false)
-            ));
-            put(KEY_RECORD, List.of(Pair.of(FilenameTemplateVariable.KEY.name, true)));
+                Pair.of(FilenameTemplateVariable.TIMESTAMP.name, false))
+            );
+            put(KEY_RECORD, 
+                Arrays.asList(Pair.of(FilenameTemplateVariable.KEY.name, true)));
         }};
 
     public static final List<String> ALL_SUPPORTED_VARIABLES =

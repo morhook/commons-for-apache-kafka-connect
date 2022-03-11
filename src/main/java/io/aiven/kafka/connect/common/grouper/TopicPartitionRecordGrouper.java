@@ -66,22 +66,23 @@ class TopicPartitionRecordGrouper implements RecordGrouper {
         Objects.requireNonNull(filenameTemplate, "filenameTemplate cannot be null");
         Objects.requireNonNull(tsSource, "tsSource cannot be null");
         this.filenameTemplate = filenameTemplate;
-        this.setTimestampBasedOnRecord = record -> new Function<>() {
+        this.setTimestampBasedOnRecord = record -> new Function() {
             private final Map<String, DateTimeFormatter> timestampFormatters =
-                Map.of(
-                    "yyyy", DateTimeFormatter.ofPattern("yyyy"),
-                    "MM", DateTimeFormatter.ofPattern("MM"),
-                    "dd", DateTimeFormatter.ofPattern("dd"),
-                    "HH", DateTimeFormatter.ofPattern("HH")
-                );
+                new HashMap<String, DateTimeFormatter>() {{
+                        put("yyyy", DateTimeFormatter.ofPattern("yyyy"));
+                        put("MM", DateTimeFormatter.ofPattern("MM"));
+                        put("dd", DateTimeFormatter.ofPattern("dd"));
+                        put("HH", DateTimeFormatter.ofPattern("HH"));
+                    }};
 
             @Override
-            public String apply(final Parameter parameter) {
+            public String apply(final Object p) {
+                final Parameter parameter = (Parameter) p;
                 return tsSource.time(record).format(timestampFormatters.get(parameter.value()));
             }
         };
         this.rotator = buffer -> {
-            final var unlimited = maxRecordsPerFile == null;
+            final boolean unlimited = maxRecordsPerFile == null;
             if (unlimited) {
                 return false;
             } else {

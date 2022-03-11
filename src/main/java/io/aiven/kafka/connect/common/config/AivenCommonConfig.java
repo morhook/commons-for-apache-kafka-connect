@@ -86,7 +86,7 @@ public class AivenCommonConfig extends AbstractConfig {
                             return;
                         }
                         assert value instanceof Long;
-                        final var longValue = (Long) value;
+                        final Long longValue = (Long) value;
                         if (longValue < 0) {
                             throw new ConfigException(name, value, "Value must be at least 0");
                         } else if (longValue > MAXIMUM_BACKOFF_POLICY) {

@@ -16,6 +16,7 @@
 
 package io.aiven.kafka.connect.common.config;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.kafka.common.config.ConfigDef;
@@ -30,10 +31,10 @@ class AivenCommonConfigTest {
 
     @Test
     void invalidEnvelopeConfiguration() {
-        final Map<String, String> properties = Map.of(
-            "format.output.fields", "key,value",
-            "format.output.envelope", "false"
-        );
+        final Map<String, String> properties = new HashMap<String, String>() {{
+                put("format.output.fields", "key,value");
+                put("format.output.envelope", "false");
+            }};
 
         final ConfigDef definition = new ConfigDef();
         addOutputFieldsFormatConfigGroup(definition, OutputFieldType.VALUE);

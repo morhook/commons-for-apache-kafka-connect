@@ -65,7 +65,7 @@ class JsonLinesOutputWriterTest extends JsonOutputWriterTestHelper {
 
     @Test
     void jsonValueWithValue() throws IOException {
-        final List<OutputField> fields = List.of(new OutputField(OutputFieldType.VALUE, noEncoding));
+        final List<OutputField> fields = Arrays.asList(new OutputField(OutputFieldType.VALUE, noEncoding));
 
         sut = new JsonLinesOutputWriter(fields, byteStream);
 
@@ -226,7 +226,7 @@ class JsonLinesOutputWriterTest extends JsonOutputWriterTestHelper {
     // Still, it is not recommended to use it that way, because it could change.
     @Test
     void doNotHaveToFailIfLastRecordIsMissing() throws IOException {
-        final List<OutputField> fields = List.of(new OutputField(OutputFieldType.VALUE, noEncoding));
+        final List<OutputField> fields = Arrays.asList(new OutputField(OutputFieldType.VALUE, noEncoding));
         sut = new JsonLinesOutputWriter(fields, byteStream);
 
         final Struct struct1 = new Struct(level1Schema).put("name", "John");

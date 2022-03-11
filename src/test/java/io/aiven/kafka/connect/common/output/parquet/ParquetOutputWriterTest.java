@@ -26,11 +26,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.kafka.common.record.TimestampType;
@@ -46,6 +46,7 @@ import io.aiven.kafka.connect.common.config.OutputFieldEncodingType;
 import io.aiven.kafka.connect.common.config.OutputFieldType;
 
 import org.apache.parquet.avro.AvroParquetReader;
+import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.io.DelegatingSeekableInputStream;
 import org.apache.parquet.io.InputFile;
 import org.apache.parquet.io.SeekableInputStream;
@@ -58,11 +59,11 @@ class ParquetOutputWriterTest {
 
     @Test
     void testWriteAllFields(@TempDir final Path tmpDir) throws IOException {
-        final var parquetFile = tmpDir.resolve("parquet.file");
-        final var values = List.of("a", "b", "c", "d");
+        final Path parquetFile = tmpDir.resolve("parquet.file");
+        final List<String> values = Arrays.asList("a", "b", "c", "d");
         writeRecords(
                 parquetFile,
-                List.of(
+                Arrays.asList(
                         new OutputField(OutputFieldType.KEY, OutputFieldEncodingType.NONE),
                         new OutputField(OutputFieldType.OFFSET, OutputFieldEncodingType.NONE),
                         new OutputField(OutputFieldType.TIMESTAMP, OutputFieldEncodingType.NONE),
@@ -74,10 +75,10 @@ class ParquetOutputWriterTest {
                 true,
                 true
         );
-        var counter = 0;
-        final var timestamp = 1000;
-        for (final var r : readRecords(parquetFile)) {
-            final var expectedString =
+        int counter = 0;
+        final int timestamp = 1000;
+        for (final String r : readRecords(parquetFile)) {
+            final String expectedString =
                     "{\"key\": \"some-key-" + counter + "\", "
                             + "\"offset\": 100, "
                             + "\"timestamp\": "
@@ -92,11 +93,11 @@ class ParquetOutputWriterTest {
 
     @Test
     void testWritePartialFields(@TempDir final Path tmpDir) throws IOException {
-        final var parquetFile = tmpDir.resolve("parquet.file");
-        final var values = List.of("a", "b", "c", "d");
+        final Path parquetFile = tmpDir.resolve("parquet.file");
+        final List<String> values = Arrays.asList("a", "b", "c", "d");
         writeRecords(
                 parquetFile,
-                List.of(
+                Arrays.asList(
                         new OutputField(OutputFieldType.KEY, OutputFieldEncodingType.NONE),
                         new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE)
                 ),
@@ -105,9 +106,9 @@ class ParquetOutputWriterTest {
                 false,
                 true
         );
-        var counter = 0;
-        for (final var r : readRecords(parquetFile)) {
-            final var expectedString =
+        int counter = 0;
+        for (final String r : readRecords(parquetFile)) {
+            final String expectedString =
                     "{\"key\": \"some-key-" + counter + "\", "
                             + "\"value\": \"" + values.get(counter) + "\"}";
             assertThat(r).isEqualTo(expectedString);
@@ -117,15 +118,15 @@ class ParquetOutputWriterTest {
 
     @Test
     void testWriteValueStruct(@TempDir final Path tmpDir) throws IOException {
-        final var parquetFile = tmpDir.resolve("parquet.file");
-        final var recordSchema =
+        final Path parquetFile = tmpDir.resolve("parquet.file");
+        final Schema recordSchema =
                 SchemaBuilder.struct()
                     .field("name", Schema.STRING_SCHEMA)
                     .field("age", Schema.INT32_SCHEMA)
                 .build();
 
-        final var values =
-                List.of(
+        final List<Struct> values =
+                Arrays.asList(
                         new Struct(recordSchema)
                                 .put("name", "name-0").put("age", 0),
                         new Struct(recordSchema)
@@ -137,15 +138,15 @@ class ParquetOutputWriterTest {
                 );
         writeRecords(
                 parquetFile,
-                List.of(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE)),
+                Arrays.asList(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE)),
                 recordSchema,
                 values,
                 false,
                 true
         );
-        var counter = 0;
-        for (final var r : readRecords(parquetFile)) {
-            final var expectedString = "{\"value\": {\"name\": \"name-" + counter + "\", \"age\": " + counter + "}}";
+        int counter = 0;
+        for (final String r : readRecords(parquetFile)) {
+            final String expectedString = "{\"value\": {\"name\": \"name-" + counter + "\", \"age\": " + counter + "}}";
             assertThat(r).isEqualTo(expectedString);
             counter++;
         }
@@ -153,15 +154,15 @@ class ParquetOutputWriterTest {
 
     @Test
     void testWriteValueStructWithoutEnvelope(@TempDir final Path tmpDir) throws IOException {
-        final var parquetFile = tmpDir.resolve("parquet.file");
-        final var recordSchema =
+        final Path parquetFile = tmpDir.resolve("parquet.file");
+        final Schema recordSchema =
                 SchemaBuilder.struct()
                         .field("name", Schema.STRING_SCHEMA)
                         .field("age", Schema.INT32_SCHEMA)
                         .build();
 
-        final var values =
-                List.of(
+        final List<Struct> values =
+                Arrays.asList(
                         new Struct(recordSchema)
                                 .put("name", "name-0").put("age", 0),
                         new Struct(recordSchema)
@@ -173,7 +174,7 @@ class ParquetOutputWriterTest {
                 );
         writeRecords(
                 parquetFile,
-                List.of(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE)),
+                Arrays.asList(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE)),
                 recordSchema,
                 values,
                 false,
@@ -191,26 +192,26 @@ class ParquetOutputWriterTest {
 
     @Test
     void testWriteValueArray(@TempDir final Path tmpDir) throws IOException {
-        final var parquetFile = tmpDir.resolve("parquet.file");
-        final var recordSchema = SchemaBuilder.array(Schema.INT32_SCHEMA).build();
+        final Path parquetFile = tmpDir.resolve("parquet.file");
+        final Schema recordSchema = SchemaBuilder.array(Schema.INT32_SCHEMA).build();
 
-        final var values =
-                List.of(
-                        List.of(1, 2, 3, 4),
-                        List.of(5, 6, 7, 8),
-                        List.of(9, 10)
+        final List<List<Integer>> values =
+                Arrays.asList(
+                        Arrays.asList(1, 2, 3, 4),
+                        Arrays.asList(5, 6, 7, 8),
+                        Arrays.asList(9, 10)
                 );
         writeRecords(
                 parquetFile,
-                List.of(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE)),
+                Arrays.asList(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE)),
                 recordSchema,
                 values,
                 false,
                 true
         );
-        var counter = 0;
-        for (final var r : readRecords(parquetFile)) {
-            final var expectedString = "{\"value\": " + values.get(counter) + "}";
+        int counter = 0;
+        for (final String r : readRecords(parquetFile)) {
+            final String expectedString = "{\"value\": " + values.get(counter) + "}";
             assertThat(r).isEqualTo(expectedString);
             counter++;
         }
@@ -218,39 +219,47 @@ class ParquetOutputWriterTest {
 
     @Test
     void testWriteValueMap(@TempDir final Path tmpDir) throws IOException {
-        final var parquetFile = tmpDir.resolve("parquet.file");
-        final var recordSchema = SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.INT32_SCHEMA).build();
+        final Path parquetFile = tmpDir.resolve("parquet.file");
+        final Schema recordSchema = SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.INT32_SCHEMA).build();
 
         writeRecords(
                 parquetFile,
-                List.of(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE)),
+                Arrays.asList(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE)),
                 recordSchema,
-                List.of(Map.of("a", 1, "b", 2)),
+                Arrays.asList(new HashMap<String, Integer>() {{
+                        put("a", 1);
+                        put("b", 2);
+                    }}
+                ),
                 false,
                 true
         );
-        for (final var r : readRecords(parquetFile)) {
-            final var mapValue =  "{\"a\": 1, \"b\": 2}";
-            final var expectedString = "{\"value\": " + mapValue + "}";
+        for (final String r : readRecords(parquetFile)) {
+            final String mapValue =  "{\"a\": 1, \"b\": 2}";
+            final String expectedString = "{\"value\": " + mapValue + "}";
             assertThat(r).isEqualTo(expectedString);
         }
     }
 
     @Test
     void testWriteValueMapWithoutEnvelope(@TempDir final Path tmpDir) throws IOException {
-        final var parquetFile = tmpDir.resolve("parquet.file");
-        final var recordSchema = SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.INT32_SCHEMA).build();
+        final Path parquetFile = tmpDir.resolve("parquet.file");
+        final Schema recordSchema = SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.INT32_SCHEMA).build();
 
         writeRecords(
                 parquetFile,
-                List.of(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE)),
+                Arrays.asList(new OutputField(OutputFieldType.VALUE, OutputFieldEncodingType.NONE)),
                 recordSchema,
-                List.of(new HashMap<>(Map.of("a", 1, "b", 2))),
+                Arrays.asList(new HashMap<String, Integer>() {{
+                        put("a", 1);
+                        put("b", 2);
+                    }}
+                ),
                 false,
                 false
         );
 
-        final var expectedString = "{\"a\": 1, \"b\": 2}";
+        final String expectedString = "{\"a\": 1, \"b\": 2}";
         assertThat(readRecords(parquetFile)).containsExactly(expectedString);
     }
 
@@ -264,12 +273,13 @@ class ParquetOutputWriterTest {
         final Headers headers = new ConnectHeaders();
         headers.add("a", "b".getBytes(StandardCharsets.UTF_8), Schema.BYTES_SCHEMA);
         headers.add("c", "d".getBytes(StandardCharsets.UTF_8), Schema.BYTES_SCHEMA);
-        try (final var o = out;
-             final var parquetWriter = new ParquetOutputWriter(fields, o, Collections.emptyMap(), withEnvelope)) {
+        try (final OutputStream o = out;
+             final ParquetOutputWriter parquetWriter = 
+                 new ParquetOutputWriter(fields, o, Collections.emptyMap(), withEnvelope)) {
             int counter = 0;
-            final var sinkRecords = new ArrayList<SinkRecord>();
-            for (final var r : records) {
-                final var sinkRecord =
+            final List<SinkRecord> sinkRecords = new ArrayList<SinkRecord>();
+            for (final T r : records) {
+                final SinkRecord sinkRecord =
                         new SinkRecord(
                                 "some-topic", 1,
                                 Schema.STRING_SCHEMA, "some-key-" + counter,
@@ -286,13 +296,13 @@ class ParquetOutputWriterTest {
     }
 
     private List<String> readRecords(final Path parquetFile) throws IOException {
-        final var inputFile = new ParquetInputFile(parquetFile);
-        final var records = new ArrayList<String>();
-        try (final var reader =
+        final ParquetInputFile inputFile = new ParquetInputFile(parquetFile);
+        final List<String> records = new ArrayList<String>();
+        try (final ParquetReader<Object> reader =
                      AvroParquetReader.builder(inputFile)
                              .withCompatibility(false)
                              .build()) {
-            var r = reader.read();
+            Object r = reader.read();
             while (r != null) {
                 records.add(r.toString());
                 r = reader.read();

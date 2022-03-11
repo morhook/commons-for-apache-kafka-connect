@@ -29,8 +29,8 @@ public class NonEmptyPassword implements ConfigDef.Validator {
         if (Objects.isNull(value)) {
             return;
         }
-        final var pwd = (Password) value;
-        if (pwd.value() == null || pwd.value().isBlank()) {
+        final Password pwd = (Password) value;
+        if (pwd == null || pwd.value().matches("\\s*")) {
             throw new ConfigException(name, pwd, "Password must be non-empty");
         }
 
